@@ -1,0 +1,146 @@
+{
+  // codec-rd-eval test configuration
+  // Copy this template and customize for your evaluation.
+  //
+  // Two modes are supported:
+  //   Mode 1 (anchor/test): Compare two configurations (backward compatible)
+  //   Mode 2 (candidates[]): Compare N configurations (candidates takes priority)
+
+  eval_name: "algorithm_comparison"
+
+  // =====================================================================
+  // Mode 1: Anchor/Test pair (classic 2-config comparison)
+  // =====================================================================
+  anchor: {
+    encoder_src: "refc/src"       // C source directory
+    encoder_binary: ".rat/scratch/rd-eval/anchor_encoder"
+    encoder_cfg: "configs/anchor.cfg"  // Encoder configuration file
+    label: "Anchor (baseline)"
+  }
+
+  test: {
+    encoder_src: "refc/src"       // Same source or different branch
+    encoder_binary: ".rat/scratch/rd-eval/test_encoder"
+    encoder_cfg: "configs/test.cfg"    // Modified encoder configuration
+    label: "Test (improved)"
+  }
+
+  // =====================================================================
+  // Mode 2: N-candidate comparison (overrides anchor/test when present)
+  // First candidate with is_anchor:true (or first entry) is the anchor.
+  // =====================================================================
+  // candidates: [
+  //   {
+  //     label: "SAD baseline"
+  //     encoder_src: "refc/src"
+  //     encoder_binary: ".rat/scratch/rd-eval/sad_encoder"
+  //     encoder_cfg: "configs/sad.cfg"
+  //     is_anchor: true
+  //   }
+  //   {
+  //     label: "Hadamard"
+  //     encoder_src: "refc/src_hadamard"
+  //     encoder_binary: ".rat/scratch/rd-eval/hadamard_encoder"
+  //     encoder_cfg: "configs/hadamard.cfg"
+  //   }
+  //   {
+  //     label: "SATD+RDOQ"
+  //     encoder_src: "refc/src_satd_rdoq"
+  //     encoder_binary: ".rat/scratch/rd-eval/satd_rdoq_encoder"
+  //     encoder_cfg: "configs/satd_rdoq.cfg"
+  //   }
+  // ]
+
+  // =====================================================================
+  // Encoder command template (optional — default is HM-style)
+  // Available variables: {encoder} {cfg} {input} {width} {height}
+  //   {fps} {frames} {qp} {bitstream} {recon} {bit_depth} {chroma_format}
+  // =====================================================================
+  // encoder_cmd_template: "{encoder} -c {cfg} -i {input} -wdt {width} -hgt {height} -fr {fps} -f {frames} -q {qp} -b {bitstream} -o {recon}"
+
+  // =====================================================================
+  // Output parsing patterns (optional — default patterns support HM/VTM)
+  // Each value is a regex with one capture group for the numeric value.
+  // =====================================================================
+  // output_parsing: {
+  //   bitrate_pattern: "[Bb]itrate[:\\s=]+([0-9.]+)\\s*(?:kbps|kb/s)?"
+  //   psnr_y_pattern: "PSNR[\\s-]*Y[:\\s=]+([0-9.]+)"
+  //   psnr_u_pattern: "PSNR[\\s-]*U[:\\s=]+([0-9.]+)"
+  //   psnr_v_pattern: "PSNR[\\s-]*V[:\\s=]+([0-9.]+)"
+  //   psnr_yuv_pattern: "PSNR[\\s-]*(?:YUV|All)[:\\s=]+([0-9.]+)"
+  //   ssim_pattern: "SSIM[\\s:-]*(?:Y[\\s:=]*)?([0-9.]+)"
+  // }
+
+  // =====================================================================
+  // Quality metrics (default: PSNR only)
+  // Add "ssim" and/or "vmaf" to enable opt-in metrics.
+  // SSIM: parsed from encoder output first, falls back to ffmpeg -lavfi ssim
+  // VMAF: always computed via ffmpeg -lavfi libvmaf (requires libvmaf model)
+  // =====================================================================
+  quality_metrics: ["psnr"]
+
+  // =====================================================================
+  // Test sequences (JVET Common Test Conditions recommended)
+  // =====================================================================
+  sequences: [
+    {
+      name: "BasketballDrill"
+      path: "sequences/BasketballDrill_832x480_50.yuv"
+      width: 832
+      height: 480
+      fps: 50
+      frames: 500
+      bit_depth: 8         // 8 | 10 (default: 8)
+      chroma_format: "420" // "420" | "422" | "444" (default: "420")
+    }
+    {
+      name: "BQTerrace"
+      path: "sequences/BQTerrace_1920x1080_60.yuv"
+      width: 1920
+      height: 1080
+      fps: 60
+      frames: 600
+    }
+    {
+      name: "RaceHorses"
+      path: "sequences/RaceHorses_416x240_30.yuv"
+      width: 416
+      height: 240
+      fps: 30
+      frames: 300
+    }
+  ]
+
+  // QP points — standard 4-point for VCEG-M33 BD calculation
+  // 3 points: quadratic (degree-2) fallback
+  // 4 points: standard cubic (exact fit)
+  // 5+ points: cubic least-squares fitting
+  // JVET CTC: {22, 27, 32, 37}  |  JCT-VC CTC: {22, 27, 32, 37}
+  qp_points: [22, 27, 32, 37]
+
+  // Execution settings
+  execution: {
+    mode: "local"              // "local" | "aws-batch"
+    max_parallel: 8            // Concurrent processes for local mode
+    timeout_per_job: 3600      // Seconds per encoding job
+
+    // AWS Batch settings (used only when mode="aws-batch")
+    aws_batch: {
+      region: "ap-northeast-2"
+      job_queue: "codec-eval-spot-queue"
+      job_definition: "codec-eval-job"
+      s3_bucket: "codec-eval-results"   // S3 bucket for results and bitstreams
+      compute_env: "codec-eval-spot-ce"
+      instance_types: ["c5.xlarge", "c5.2xlarge", "c6i.xlarge"]
+      spot: true
+      max_vcpus: 64
+    }
+  }
+
+  // Output settings
+  output: {
+    report_path: "docs/phase-1-research/rd-eval-report.md"
+    raw_data_path: ".rat/scratch/rd-eval"
+    // Bitstreams and reconstructed YUV files are always preserved in raw_data_path
+  }
+}

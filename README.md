@@ -23,6 +23,17 @@ This repository serves as the **RTL Agent Marketplace**, providing hardware desi
 
 Additional plugins (domain knowledge packages, MCP servers, specialized skills, etc.) will be added to the Marketplace over time.
 
+## Cursor IDE
+
+This repository also ships a **Cursor-native bundle** (no VSIX). From a checkout:
+
+```bash
+sh scripts/sync_cursor_pack.sh                    # regenerate cursor-pack/ (needs python3)
+sh scripts/rat-init-cursor-project.sh /path/to/your-rtl-project
+```
+
+The generated `cursor-pack/` mirrors `skills/`, `agents/`, `domain-packages/`, bundles `runtime/hooks/` for gate scripts (for example `gates/cursor-verify-stop.sh`), and emits Cursor-style rules under `cursor-pack/rules/*.mdc`. Design reference: `plugin_docs/specs/2026-05-01-cursor-plugin-design.md`.
+
 ## Quick Start
 
 The workflow has **three distinct stages**, each with a different scope and frequency:

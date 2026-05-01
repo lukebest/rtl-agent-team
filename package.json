@@ -12,6 +12,7 @@
     "phase-registry.json",
     "skill-completion-criteria.json",
     "plugins",
+    "cursor-pack",
     ".claude-plugin",
     ".lsp.json",
     "CLAUDE.md",

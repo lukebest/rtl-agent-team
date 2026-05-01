@@ -1,0 +1,227 @@
+#!/bin/sh
+# audit-util.sh — POSIX sh audit logging utility for RTL Agent Team hooks.
+#
+# Provides append-only trace logging, prompt capture, and session management.
+# Follows the same patterns as json-util.sh and flock-util.sh.
+#
+# Requires: json-util.sh sourced and parser detected, flock-util.sh sourced.
+#
+# Usage:
+#   . "$SCRIPT_DIR/lib/audit-util.sh"
+#   audit_init_session "$CWD"
+#   SEQ=$(audit_trace_append "$CWD" '{"event":"skill_invoke","agent":"spec-analyst"}')
+#   audit_save_prompt "$CWD" "$SEQ" "spec-analyst" "Analyze the spec..."
+#   audit_prune "$CWD" 10
+
+# Session ID: prefer CLAUDE_SESSION_ID, fallback to timestamp+PID.
+_AUDIT_SESSION_ID_CACHE=""
+
+AUDIT_MAX_SESSIONS=${AUDIT_MAX_SESSIONS:-10}
+AUDIT_MAX_SIZE_MB=${AUDIT_MAX_SIZE_MB:-50}
+
+# Validate session ID against strict allowlist to prevent path traversal.
+# Only allows alphanumeric, hyphen, underscore, and dot characters.
+_audit_validate_session_id() {
+  _AVSI_RAW="$1"
+  # Strip any path separators or traversal segments
+  _AVSI_CLEAN=$(printf '%s' "$_AVSI_RAW" | tr -cd 'A-Za-z0-9._-')
+  # Reject empty, changed, or path-traversal tokens (., .., leading/trailing dots)
+  _AVSI_VALID=true
+  if [ -z "$_AVSI_CLEAN" ] || [ "$_AVSI_CLEAN" != "$_AVSI_RAW" ]; then
+    _AVSI_VALID=false
+  fi
+  # Block "." and ".." explicitly
+  case "$_AVSI_CLEAN" in
+    .|..) _AVSI_VALID=false ;;
+  esac
+  # Block IDs starting or ending with dots (prevents hidden dirs and traversal variants)
+  case "$_AVSI_CLEAN" in
+    .*|*.) _AVSI_VALID=false ;;
+  esac
+  if [ "$_AVSI_VALID" = "false" ]; then
+    _AVSI_CLEAN="$(date +%Y%m%d_%H%M%S)_$$"
+  fi
+  printf '%s' "$_AVSI_CLEAN"
+}
+
+# Return the current session ID (cached after first call).
+audit_session_id() {
+  _ASI_CWD="$1"
+  if [ -n "$_AUDIT_SESSION_ID_CACHE" ]; then
+    printf '%s' "$_AUDIT_SESSION_ID_CACHE"
+    return 0
+  fi
+
+  # CLAUDE_SESSION_ID takes priority over cached file to prevent cross-session contamination.
+  if [ -n "${CLAUDE_SESSION_ID:-}" ]; then
+    _AUDIT_SESSION_ID_CACHE=$(_audit_validate_session_id "$CLAUDE_SESSION_ID")
+    printf '%s' "$_AUDIT_SESSION_ID_CACHE"
+    return 0
+  fi
+
+  # Fallback: read from cached file (for environments without CLAUDE_SESSION_ID)
+  _ASI_RAT=$(rat_project_dir "$_ASI_CWD") || _ASI_RAT="$_ASI_CWD/.rat"
+  _ASI_ID_FILE="$_ASI_RAT/audit/session-id.txt"
+  if [ -f "$_ASI_ID_FILE" ]; then
+    _ASI_RAW=$(cat "$_ASI_ID_FILE" 2>/dev/null)
+    _AUDIT_SESSION_ID_CACHE=$(_audit_validate_session_id "$_ASI_RAW")
+    printf '%s' "$_AUDIT_SESSION_ID_CACHE"
+    return 0
+  fi
+
+  # Last resort: generate timestamp-based ID
+  _AUDIT_SESSION_ID_CACHE="$(date +%Y%m%d_%H%M%S)_$$"
+  printf '%s' "$_AUDIT_SESSION_ID_CACHE"
+}
+
+# Initialize audit session directory and cache session ID.
+# Returns 0 on success, 1 if not an RTL project.
+audit_init_session() {
+  _AIS_CWD="$1"
+  _AIS_STATE=$(rat_project_dir "$_AIS_CWD")
+
+  # Only initialize if this looks like an RTL project
+  if [ -z "$_AIS_STATE" ] && [ ! -d "$_AIS_CWD/rtl" ] && [ ! -d "$_AIS_CWD/docs" ]; then
+    return 1
+  fi
+
+  # Default to .rat for new projects where neither marker exists yet
+  [ -z "$_AIS_STATE" ] && _AIS_STATE="$_AIS_CWD/.rat"
+  _AIS_ID=$(audit_session_id "$_AIS_CWD")
+  _AIS_AUDIT_DIR="$_AIS_STATE/audit"
+  _AIS_SESSION_DIR="$_AIS_AUDIT_DIR/$_AIS_ID"
+
+  mkdir -p "$_AIS_SESSION_DIR/prompts"
+
+  # Cache session ID to file
+  printf '%s' "$_AIS_ID" > "$_AIS_AUDIT_DIR/session-id.txt"
+
+  return 0
+}
+
+# Append a trace event to trace.jsonl. Adds ts and seq automatically.
+# Usage: SEQ=$(audit_trace_append "$CWD" '{"event":"spawn_start","agent":"foo"}')
+# The input JSON must NOT include ts or seq — they are prepended.
+# Returns the sequence number on stdout.
+audit_trace_append() {
+  _ATA_CWD="$1"
+  _ATA_JSON="$2"
+  _ATA_ID=$(audit_session_id "$_ATA_CWD")
+
+  if [ -z "$_ATA_ID" ]; then
+    printf '0'
+    return 1
+  fi
+
+  _ATA_RAT=$(rat_project_dir "$_ATA_CWD") || _ATA_RAT="$_ATA_CWD/.rat"
+  _ATA_TRACE="$_ATA_RAT/audit/$_ATA_ID/trace.jsonl"
+  mkdir -p "$(dirname "$_ATA_TRACE")"
+
+  # Generate timestamp
+  _ATA_TS=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date +%Y-%m-%dT%H:%M:%S+00:00)
+
+  # Atomic seq generation + append under lock
+  _ATA_SEQ=0
+  if acquire_lock "$_ATA_TRACE"; then
+    # Count existing lines for seq number
+    if [ -f "$_ATA_TRACE" ]; then
+      _ATA_SEQ=$(wc -l < "$_ATA_TRACE" | tr -d ' ')
+    fi
+    _ATA_SEQ=$((_ATA_SEQ + 1))
+
+    # Merge ts and seq into the JSON object
+    # Strip leading { from input, prepend ts+seq fields
+    _ATA_BODY=$(printf '%s' "$_ATA_JSON" | sed 's/^[[:space:]]*{//')
+    printf '{"ts":"%s","seq":%s,%s\n' "$_ATA_TS" "$_ATA_SEQ" "$_ATA_BODY" >> "$_ATA_TRACE"
+
+    release_lock "$_ATA_TRACE"
+  else
+    # Fallback: append without lock (better than losing the event)
+    if [ -f "$_ATA_TRACE" ]; then
+      _ATA_SEQ=$(wc -l < "$_ATA_TRACE" | tr -d ' ')
+    fi
+    _ATA_SEQ=$((_ATA_SEQ + 1))
+    _ATA_BODY=$(printf '%s' "$_ATA_JSON" | sed 's/^[[:space:]]*{//')
+    printf '{"ts":"%s","seq":%s,%s\n' "$_ATA_TS" "$_ATA_SEQ" "$_ATA_BODY" >> "$_ATA_TRACE"
+  fi
+
+  printf '%s' "$_ATA_SEQ"
+}
+
+# Save an agent prompt to the prompts directory.
+# Usage: audit_save_prompt "$CWD" "$SEQ" "agent-name" "prompt content"
+audit_save_prompt() {
+  _ASP_CWD="$1"
+  _ASP_SEQ="$2"
+  _ASP_AGENT="$3"
+  _ASP_CONTENT="$4"
+  _ASP_ID=$(audit_session_id "$_ASP_CWD")
+
+  if [ -z "$_ASP_ID" ] || [ -z "$_ASP_CONTENT" ]; then
+    return 1
+  fi
+
+  _ASP_RAT=$(rat_project_dir "$_ASP_CWD") || _ASP_RAT="$_ASP_CWD/.rat"
+  _ASP_DIR="$_ASP_RAT/audit/$_ASP_ID/prompts"
+  mkdir -p "$_ASP_DIR"
+
+  # Sanitize agent name to prevent path traversal (strip to basename-safe token)
+  _ASP_SAFE_AGENT=$(printf '%s' "$_ASP_AGENT" | tr -cd 'A-Za-z0-9._-')
+  [ -z "$_ASP_SAFE_AGENT" ] && _ASP_SAFE_AGENT="unknown-agent"
+
+  # Zero-pad seq to 3 digits
+  _ASP_PAD=$(printf '%03d' "$_ASP_SEQ" 2>/dev/null || printf '%s' "$_ASP_SEQ")
+  _ASP_FILE="$_ASP_DIR/${_ASP_PAD}_${_ASP_SAFE_AGENT}.md"
+
+  printf '%s\n' "$_ASP_CONTENT" > "$_ASP_FILE"
+}
+
+# Prune old audit sessions, keeping only the most recent N.
+# Also enforces total size limit.
+# Usage: audit_prune "$CWD" 10
+audit_prune() {
+  _APR_CWD="$1"
+  _APR_MAX="${2:-$AUDIT_MAX_SESSIONS}"
+  _APR_RAT=$(rat_project_dir "$_APR_CWD") || _APR_RAT="$_APR_CWD/.rat"
+  _APR_AUDIT_DIR="$_APR_RAT/audit"
+
+  [ ! -d "$_APR_AUDIT_DIR" ] && return 0
+
+  # List session directories sorted by mtime (oldest first)
+  # Exclude session-id.txt and other non-directory entries
+  _APR_COUNT=0
+  _APR_DIRS=""
+  for _apr_d in "$_APR_AUDIT_DIR"/*/; do
+    [ -d "$_apr_d" ] || continue
+    _APR_COUNT=$((_APR_COUNT + 1))
+    _APR_DIRS="$_APR_DIRS
+$_apr_d"
+  done
+
+  # Remove excess sessions (oldest first)
+  if [ "$_APR_COUNT" -gt "$_APR_MAX" ]; then
+    _APR_REMOVE=$((_APR_COUNT - _APR_MAX))
+    # Sort by mtime ascending — use ls -1td for reverse chronological, then tail
+    # Use while-read to handle paths with spaces safely
+    # shellcheck disable=SC2012  # Session dirs use controlled naming; POSIX find lacks mtime sort
+    ls -1td "$_APR_AUDIT_DIR"/*/ 2>/dev/null | tail -n "$_APR_REMOVE" | while IFS= read -r _apr_old; do
+      [ -d "$_apr_old" ] && rm -rf "$_apr_old"
+    done
+  fi
+
+  # Enforce total size limit (approximate, using du)
+  _APR_SIZE_KB=$(du -sk "$_APR_AUDIT_DIR" 2>/dev/null | cut -f1)
+  _APR_MAX_KB=$((AUDIT_MAX_SIZE_MB * 1024))
+  if [ -n "$_APR_SIZE_KB" ] && [ "$_APR_SIZE_KB" -gt "$_APR_MAX_KB" ] 2>/dev/null; then
+    # Remove oldest sessions first until under limit
+    # ls -1td = newest first; tail -n +2 = skip newest; awk reverses to oldest-first
+    # shellcheck disable=SC2012  # Session dirs use controlled naming; POSIX find lacks mtime sort
+    ls -1td "$_APR_AUDIT_DIR"/*/ 2>/dev/null | tail -n +2 | awk '{a[NR]=$0}END{for(i=NR;i>=1;i--)print a[i]}' | while IFS= read -r _apr_old; do
+      [ -d "$_apr_old" ] || continue
+      rm -rf "$_apr_old"
+      _APR_SIZE_KB=$(du -sk "$_APR_AUDIT_DIR" 2>/dev/null | cut -f1)
+      [ -z "$_APR_SIZE_KB" ] && break
+      [ "$_APR_SIZE_KB" -le "$_APR_MAX_KB" ] 2>/dev/null && break
+    done
+  fi
+}

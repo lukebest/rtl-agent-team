@@ -1,0 +1,64 @@
+# Yosys ASIC Synthesis Estimation Script Template
+# Target: TSMC 28nm (approximated via NanGate45 / FreePDK45)
+# Usage: yosys -s synth_{{MODULE}}.ys | tee syn/log/{{MODULE}}_synth.log
+#
+# PREREQUISITE: SDC must be generated BEFORE running this script
+# PREREQUISITE: sv2v conversion must be done BEFORE running this script
+#   sv2v rtl/common/*.sv rtl/{{MODULE}}/*.sv -o rtl/{{MODULE}}/{{MODULE}}_v2v.v
+#   (always include rtl/common/ for SRAM wrappers and shared utilities)
+
+# ============================================================
+# Read RTL (sv2v-converted Verilog — NOT .sv)
+# ============================================================
+# Include common wrappers (sram_sp, sram_tp, etc.) + module-specific files
+# sv2v merges all inputs into a single .v file
+read_verilog rtl/{{MODULE}}/{{MODULE}}_v2v.v
+
+# ============================================================
+# Elaboration & Optimization
+# ============================================================
+hierarchy -check -top {{MODULE}}
+proc; opt; fsm; opt
+
+# ============================================================
+# Memory Handling
+# ============================================================
+# memory pass converts behavioral memory arrays to $mem cells,
+# then maps to FF or inferred BRAM depending on size.
+# SRAM wrappers (sram_sp/sram_tp/sram_dp) should infer as memory blocks.
+# Use -nomap to inspect $mem cells before technology mapping:
+#   memory -nomap; stat    (debug: check memory inference)
+memory; opt
+
+# ============================================================
+# Technology Mapping (NanGate45 — TSMC 28nm proxy)
+# ============================================================
+# NanGate45 is the DEFAULT liberty for PPA estimation.
+# To use a different liberty: run_syn.sh --liberty <path> generates
+# a dynamic script with your library. This template is for direct
+# Yosys invocation with NanGate45 only.
+techmap; opt
+dfflibmap -liberty NangateOpenCellLibrary_typical.lib
+abc -liberty NangateOpenCellLibrary_typical.lib
+clean
+
+# ============================================================
+# Statistics — Area in NAND2-FO2 Gate Equivalents
+# ============================================================
+# stat -liberty reports "Chip area" in um2
+# Gate count = Chip area / 0.798 (NAND2X1 area in NanGate45)
+stat -liberty NangateOpenCellLibrary_typical.lib
+
+# ============================================================
+# Post-Synthesis Checks
+# ============================================================
+
+# Check for combinational loops
+scc -max_depth 10
+
+# Check for inferred latches (MUST be zero)
+# $_DLATCH_* in stat output → HARD FAIL
+
+# Export netlist (optional — only when user requests full synthesis)
+# write_verilog syn/netlist/{{MODULE}}_netlist.v
+# write_json syn/vnet/{{MODULE}}.json

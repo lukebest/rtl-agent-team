@@ -1,0 +1,212 @@
+{
+  "schema_version": "3.0",
+  "current_phase": 1,
+  "current_phase_name": "research",
+  "status": "in_progress",
+  "started_at": "{{TIMESTAMP}}",
+  "interrupted_reason": null,
+  "partial_work_summary": null,
+  "upper_spec_blocking": false,
+  "orchestration_control": {
+    "default_retry_limit": 2,
+    "active_gate_id": "p1-quality-gate",
+    "active_gate_retry_limit": 2,
+    "active_gate_primary_attempts": 0,
+    "active_gate_fallback_attempts": 0,
+    "active_gate_last_chance_attempts": 0,
+    "active_gate_strategy": "primary",
+    "needs_user_decision": false,
+    "dynamic_prompt_text": "",
+    "dynamic_prompt": {
+      "source": "template",
+      "text": "",
+      "target_gate_id": "p1-quality-gate",
+      "strategy_tag": "primary",
+      "consume_once": true,
+      "used": false
+    },
+    "gates": {
+      "p1-quality-gate": {
+        "retry_limit": 2,
+        "primary_attempts": 0,
+        "fallback_attempts": 0,
+        "last_chance_attempts": 0,
+        "strategy": "primary",
+        "status": "pending",
+        "last_fail_reason": null,
+        "assigned_agents": [
+          "p1-research-orchestrator",
+          "spec-analyst"
+        ]
+      }
+    }
+  },
+  "phases": {
+    "1_research": {
+      "status": "in_progress",
+      "started_at": "{{TIMESTAMP}}",
+      "completed_at": null,
+      "gate_passed_at": null,
+      "review_rounds_completed": 0,
+      "artifacts": {
+        "requirements_json": false,
+        "io_definition_json": false,
+        "domain_analysis_md": false
+      },
+      "artifact_gate": null,
+      "quality_gate": null,
+      "quality_gate_retries": 0,
+      "partial_work": {
+        "completed_items": [],
+        "pending_items": ["requirements_json", "io_definition_json", "domain_analysis_md"],
+        "current_action": null,
+        "last_agent": null
+      }
+    },
+    "2_architecture": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "gate_passed_at": null,
+      "review_rounds_completed": 0,
+      "artifacts": {
+        "architecture_md": false,
+        "ref_model_src": false
+      },
+      "artifact_gate": null,
+      "quality_gate": null,
+      "quality_gate_retries": 0,
+      "partial_work": {
+        "completed_items": [],
+        "pending_items": ["architecture_md", "ref_model_src"],
+        "current_action": null,
+        "last_agent": null
+      }
+    },
+    "3_uarch": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "gate_passed_at": null,
+      "review_rounds_completed": 0,
+      "artifacts": {
+        "uarch_md": false,
+        "bfm_dir": false
+      },
+      "artifact_gate": null,
+      "quality_gate": null,
+      "quality_gate_retries": 0,
+      "partial_work": {
+        "completed_items": [],
+        "pending_items": ["uarch_md", "bfm_dir"],
+        "current_action": null,
+        "last_agent": null
+      }
+    },
+    "4_rtl": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "gate_passed_at": null,
+      "review_rounds_completed": 0,
+      "artifacts": {
+        "rtl_src_sv": false,
+        "lint_clean": false,
+        "unit_tests": false,
+        "functional_completeness": false,
+        "design_review": false,
+        "stream_b_sva_skeletons": false,
+        "stream_b_cdc_preliminary": false,
+        "stream_b_tb_skeletons": false
+      },
+      "artifact_gate": null,
+      "quality_gate": null,
+      "quality_gate_retries": 0,
+      "partial_work": {
+        "completed_items": [],
+        "pending_items": ["rtl_src_sv", "lint_clean", "unit_tests", "functional_completeness", "design_review", "stream_b_sva_skeletons", "stream_b_cdc_preliminary", "stream_b_tb_skeletons"],
+        "current_action": null,
+        "last_agent": null
+      },
+      "completed_modules": [],
+      "pending_modules": [],
+      "stream_a_status": "pending",
+      "stream_b_status": "pending",
+      "team": {
+        "team_name": null,
+        "status": "inactive",
+        "worker_count": 0
+      }
+    },
+    "5_verify": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "gate_passed_at": null,
+      "review_rounds_completed": 0,
+      "artifacts": {
+        "unit_tests": false,
+        "func_tests": false,
+        "sva_formal": false,
+        "cdc_report": false,
+        "traceability_matrix": false,
+        "coverage_report": false,
+        "final_compliance": false
+      },
+      "artifact_gate": null,
+      "quality_gate": null,
+      "quality_gate_retries": 0,
+      "partial_work": {
+        "completed_items": [],
+        "pending_items": ["unit_tests", "func_tests", "sva_formal", "cdc_report", "traceability_matrix", "coverage_report", "final_compliance"],
+        "current_action": null,
+        "last_agent": null
+      },
+      "completed_sub_phases": [],
+      "pending_sub_phases": ["5a_formal", "5b_cdc", "5c_integration", "5d_coverage", "5e_compliance"],
+      "fix_history": [],
+      "team": {
+        "team_name": null,
+        "status": "inactive",
+        "worker_count": 0
+      }
+    },
+    "6_design_note": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "gate_passed_at": null,
+      "review_rounds_completed": 0,
+      "artifacts": {
+        "code_review_md": false,
+        "design_review_md": false,
+        "design_note_md": false,
+        "improvements_md": false
+      },
+      "artifact_gate": null,
+      "quality_gate": null,
+      "quality_gate_retries": 0,
+      "partial_work": {
+        "completed_items": [],
+        "pending_items": ["code_review_md", "design_review_md", "design_note_md", "improvements_md"],
+        "current_action": null,
+        "last_agent": null
+      },
+      "completed_waves": [],
+      "current_wave": null
+    }
+  },
+  "upper_spec_violations": [
+    {
+      "_comment": "Template entry — remove when creating actual state file",
+      "detected_at_phase": "{{N}}",
+      "violation_type": "DESIGN_FIX | INTEGRATION_FIX",
+      "description": "{{violation description}}",
+      "return_to_phase": "{{N}}",
+      "user_approved": false,
+      "resolution": null,
+      "resolved_at": null
+    }
+  ],
+  "review_artifacts": []
+}

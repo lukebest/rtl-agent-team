@@ -23,6 +23,17 @@ RTL 설계 및 검증 자동화를 위한 Claude Code 플러그인.
 
 Marketplace에 추가 플러그인(도메인 지식 패키지, MCP 서버, 전문 스킬 등)이 지속적으로 추가될 예정입니다.
 
+## Cursor IDE
+
+Claude Code 대신 **Cursor**에서 쓸 수 있도록, 동일 저장소에서 **Cursor용 번들**(`cursor-pack/`)을 생성합니다(VSIX 없음).
+
+```bash
+sh scripts/sync_cursor_pack.sh                    # cursor-pack/ 재생성 (python3 필요)
+sh scripts/rat-init-cursor-project.sh /path/to/your-rtl-project
+```
+
+설계 요약: `plugin_docs/specs/2026-05-01-cursor-plugin-design.md`.
+
 ## Quick Start
 
 워크플로는 **세 가지 단계**로 명확히 구분되며, 각 단계는 범위와 빈도가 다릅니다:

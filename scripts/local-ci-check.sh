@@ -5,7 +5,8 @@
 #
 # Mirrors .github/workflows/ci.yml:
 #   1. pytest tests/unit/
-#   2. shellcheck -s sh hooks/*.sh hooks/lib/*.sh
+#   2. cursor-pack/ drift check (regenerate + git diff)
+#   3. shellcheck -s sh hooks/*.sh hooks/lib/*.sh
 #
 # On macOS or bash < 5, shell-execution tests are conservatively deselected
 # (cross-platform behavior not validated). On Linux with bash 5+, all tests run (CI parity).
@@ -26,7 +27,7 @@ echo "============================================"
 echo ""
 
 # ── Step 1: Python tests ──────────────────────────────────────────────
-echo "[1/2] Running pytest..."
+echo "[1/3] Running pytest..."
 
 # Activate venv if present
 if [ -f ".venv/bin/activate" ]; then
@@ -77,8 +78,23 @@ fi
 
 echo ""
 
-# ── Step 2: shellcheck ────────────────────────────────────────────────
-echo "[2/2] Running shellcheck..."
+# ── Step 2: cursor-pack regeneration drift ────────────────────────────
+echo "[2/3] Checking cursor-pack sync..."
+if [ "$FAIL" -eq 0 ]; then
+  if sh scripts/sync_cursor_pack.sh >/dev/null 2>&1 && git diff --exit-code cursor-pack/ >/dev/null 2>&1; then
+    echo "  ✓ cursor-pack in sync"
+  else
+    echo "  ✗ cursor-pack out of date — run: sh scripts/sync_cursor_pack.sh && git add cursor-pack/"
+    FAIL=1
+  fi
+else
+  echo "  (skipped — pytest failed)"
+fi
+
+echo ""
+
+# ── Step 3: shellcheck ────────────────────────────────────────────────
+echo "[3/3] Running shellcheck..."
 
 if command -v shellcheck >/dev/null 2>&1; then
   if shellcheck -s sh hooks/*.sh && shellcheck -s sh hooks/lib/*.sh; then

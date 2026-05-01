@@ -7,6 +7,15 @@ Versions `0.6.1` and `0.6.2` do not appear in the recorded release history, so t
 
 ## [Unreleased]
 
+### Added
+- **Cursor-native delivery pack** (`cursor-pack/`): generated from SSOT via
+  `scripts/generate_cursor_pack.py` and `sh scripts/sync_cursor_pack.sh`.
+  Includes mirrored `skills/`, `agents/`, `domain-packages/`, bundled
+  `runtime/hooks/` for gate scripts, Cursor-style `.mdc` rules, and
+  `gates/cursor-verify-stop.sh`. Project install:
+  `sh scripts/rat-init-cursor-project.sh [workspace]`.
+  Design: `plugin_docs/specs/2026-05-01-cursor-plugin-design.md`.
+
 ## [0.10.6] - 2026-04-25
 
 ### Fixed
