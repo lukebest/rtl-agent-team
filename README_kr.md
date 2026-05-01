@@ -1,4 +1,4 @@
-> **English version**: [README.md](./README.md)
+> **English version**: [README.md](./README.md) · **简体中文**: [README_zh.md](./README_zh.md)
 
 # RTL Agent Team
 
@@ -25,14 +25,20 @@ Marketplace에 추가 플러그인(도메인 지식 패키지, MCP 서버, 전�
 
 ## Cursor IDE
 
-Claude Code 대신 **Cursor**에서 쓸 수 있도록, 동일 저장소에서 **Cursor용 번들**(`cursor-pack/`)을 생성합니다(VSIX 없음).
+동일 저장소에서 **Cursor 플러그인 번들**(`cursor-pack/`)을 제공합니다(VSIX 없음). `cursor-pack/.cursor-plugin/plugin.json`, `hooks/hooks.json`, 동기화된 `skills/`·`agents/`·`domain-packages/`, `runtime/hooks/` POSIX 스크립트, 생성된 `rules/*.mdc`가 포함됩니다. 저장소 루트의 **`.cursor-plugin/marketplace.json`**은 GitHub에서 멀티 플러그인으로 탐색할 때 사용됩니다.
 
 ```bash
-sh scripts/sync_cursor_pack.sh                    # cursor-pack/ 재생성 (python3 필요)
-sh scripts/rat-init-cursor-project.sh /path/to/your-rtl-project
+sh scripts/sync_cursor_pack.sh                    # cursor-pack/ 재생성 (python3 + rsync 필요)
+sh scripts/rat-init-cursor-project.sh /path/to/your-rtl-project   # 선택: 사용자 프로젝트에 .mdc 규칙 배포(없을 때만)
 ```
 
-설계 요약: `plugin_docs/specs/2026-05-01-cursor-plugin-design.md`.
+**설치(Marketplace, 등록 후)**: Cursor **Settings → Plugins**에서 **rtl-agent-team** 검색 후 설치.
+
+**설치(수동/Git)**: 저장소 클론 → `sync_cursor_pack.sh` 실행 → **Settings → Plugins → Install from folder**에서 **`cursor-pack/`** 디렉터리 선택(`.cursor-plugin/plugin.json`이 있어야 함).
+
+**제거**: **Settings → Plugins**에서 플러그인 비활성화/삭제. RTL 프로젝트 파일(`rtl/`, `docs/`, `.rat/` 등)은 삭제되지 않습니다.
+
+유지보수용 설계 문서(영문): `plugin_docs/specs/2026-05-01-cursor-marketplace-plugin-design.md`. **중국어 사용자 안내**: [`README_zh.md`](README_zh.md).
 
 ## Quick Start
 

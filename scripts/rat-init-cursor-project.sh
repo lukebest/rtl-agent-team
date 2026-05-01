@@ -1,23 +1,30 @@
 #!/bin/sh
-# Install Cursor rules from generated cursor-pack into a user workspace (non-destructive).
-# Usage: sh scripts/rat-init-cursor-project.sh [workspace]
+# Deploy Cursor-style rules from cursor-pack into a user RTL project (non-destructive).
+# Does not replace the Cursor plugin install — only copies .mdc rules when missing.
+#
+# Usage: sh scripts/rat-init-cursor-project.sh [TARGET_DIR]
+# Default TARGET_DIR is current directory.
 set -eu
-ROOT_DIR=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
-WS="${1:-$(pwd)}"
-SRC_RULES="$ROOT_DIR/cursor-pack/rules"
-DST_RULES="$WS/.cursor/rules"
-if [ ! -d "$SRC_RULES" ]; then
-  echo "error: missing $SRC_RULES — run: sh scripts/sync_cursor_pack.sh" >&2
+
+TARGET="${1:-.}"
+ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)"
+RULES_SRC="$ROOT/cursor-pack/rules"
+
+if [ ! -d "$RULES_SRC" ]; then
+  echo "error: $RULES_SRC not found — run: sh scripts/sync_cursor_pack.sh" >&2
   exit 1
 fi
-mkdir -p "$DST_RULES"
-for f in "$SRC_RULES"/*.mdc; do
+
+mkdir -p "$TARGET/.cursor/rules"
+deployed=0
+for f in "$RULES_SRC"/*.mdc; do
   [ -f "$f" ] || continue
   base=$(basename "$f")
-  if [ -f "$DST_RULES/$base" ]; then
-    echo "skip existing: $DST_RULES/$base" >&2
-    continue
+  dest="$TARGET/.cursor/rules/$base"
+  if [ ! -f "$dest" ]; then
+    cp "$f" "$dest"
+    deployed=$((deployed + 1))
   fi
-  cp "$f" "$DST_RULES/$base"
 done
-echo "Installed rules into $DST_RULES"
+
+printf 'rat-init-cursor-project: target=%s deployed_new_rules=%s (skipped existing)\n' "$TARGET" "$deployed"

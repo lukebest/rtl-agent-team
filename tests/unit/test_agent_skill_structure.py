@@ -545,8 +545,8 @@ class TestCrossReferences:
         # single-quoted heredoc that emits one JSON envelope on stdout
         # (see CLAUDE.md "Hook output schema (SessionStart)").
         lines = hook_block.splitlines()
-        assert lines and lines[0] == "cat << 'JSON_EOF'", (
-            "Hook block must start with `cat << 'JSON_EOF'`. "
+        assert lines and lines[0].startswith("cat << 'JSON_EOF'") and "format_session_start.py" in lines[0], (
+            "Hook block must pipe through hooks/lib/format_session_start.py. "
             "Run: sh scripts/sync_orchestrator_inject.sh"
         )
         assert lines[-1] == "JSON_EOF", (

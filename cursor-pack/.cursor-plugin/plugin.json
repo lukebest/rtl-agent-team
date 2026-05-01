@@ -1,0 +1,29 @@
+{
+  "name": "rtl-agent-team",
+  "version": "0.10.6",
+  "description": "97-agent RTL design pipeline with 97 skills for 6-Phase hardware design automation (Research \u2192 Architecture \u2192 \u03bcArch \u2192 RTL \u2192 Verify \u2192 Design Note)",
+  "author": {
+    "name": "babyworm"
+  },
+  "repository": "https://github.com/babyworm/rtl-agent-team",
+  "homepage": "https://github.com/babyworm/rtl-agent-team",
+  "license": "MIT",
+  "keywords": [
+    "rtl",
+    "hdl",
+    "verilog",
+    "systemverilog",
+    "fpga",
+    "asic",
+    "eda",
+    "verification",
+    "formal",
+    "uvm",
+    "cocotb"
+  ],
+  "logo": "assets/logo.jpg",
+  "rules": "./rules/",
+  "skills": "./skills/",
+  "agents": "./agents/",
+  "hooks": "./hooks/hooks.json"
+}

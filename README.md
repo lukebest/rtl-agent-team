@@ -1,4 +1,4 @@
-> **한국어 문서**: [README_kr.md](./README_kr.md)
+> **한국어 문서**: [README_kr.md](./README_kr.md) · **简体中文**: [README_zh.md](./README_zh.md)
 
 # RTL Agent Team
 
@@ -25,14 +25,33 @@ Additional plugins (domain knowledge packages, MCP servers, specialized skills, 
 
 ## Cursor IDE
 
-This repository also ships a **Cursor-native bundle** (no VSIX). From a checkout:
+This repository ships a **Cursor plugin bundle** under **`cursor-pack/`** (no VSIX): `.cursor-plugin/plugin.json`, `hooks/hooks.json` (Cursor hook schema `version: 1`), synced `skills/`, `agents/`, `domain-packages/`, POSIX hooks under `runtime/hooks/`, and generated `.mdc` rules in `rules/`. Repo root also has **`.cursor-plugin/marketplace.json`** for multi-plugin discovery when installing from GitHub.
+
+**Regenerate** (needs **python3** and **rsync**):
 
 ```bash
-sh scripts/sync_cursor_pack.sh                    # regenerate cursor-pack/ (needs python3)
+sh scripts/sync_cursor_pack.sh
+```
+
+**Optional — deploy Cursor rules into a user RTL project** (creates missing `.cursor/rules/*.mdc` only):
+
+```bash
 sh scripts/rat-init-cursor-project.sh /path/to/your-rtl-project
 ```
 
-The generated `cursor-pack/` mirrors `skills/`, `agents/`, `domain-packages/`, bundles `runtime/hooks/` for gate scripts (for example `gates/cursor-verify-stop.sh`), and emits Cursor-style rules under `cursor-pack/rules/*.mdc`. Design reference: `plugin_docs/specs/2026-05-01-cursor-plugin-design.md`.
+**Install — Marketplace** (once listed): Cursor **Settings → Plugins** → search **rtl-agent-team** → install → reload if prompted.
+
+**Install — manual / Git**: clone this repo, run `sh scripts/sync_cursor_pack.sh`, then in Cursor **Settings → Plugins** choose **Install from folder** and select the **`cursor-pack/`** directory (must contain `.cursor-plugin/plugin.json`). Use a **trusted workspace** so project hooks can run.
+
+**Uninstall**: **Settings → Plugins** → remove or disable **rtl-agent-team**. This does not delete your RTL project files (`rtl/`, `docs/`, `.rat/`, etc.).
+
+**Design reference (maintainers)**: [`plugin_docs/specs/2026-05-01-cursor-marketplace-plugin-design.md`](plugin_docs/specs/2026-05-01-cursor-marketplace-plugin-design.md). **Full Simplified Chinese user guide**: [`README_zh.md`](README_zh.md).
+
+**Local verify-stop helper** (same semantics as the bundled Stop hook; run from project root):
+
+```bash
+sh cursor-pack/gates/cursor-verify-stop.sh
+```
 
 ## Quick Start
 

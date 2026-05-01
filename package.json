@@ -13,6 +13,7 @@
     "skill-completion-criteria.json",
     "plugins",
     "cursor-pack",
+    ".cursor-plugin",
     ".claude-plugin",
     ".lsp.json",
     "CLAUDE.md",

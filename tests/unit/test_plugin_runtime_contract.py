@@ -200,9 +200,13 @@ class TestSessionStartRoutingBlockContract:
         raw = extract_marked_block(INJECT_HOOK, SESSIONSTART_BLOCK_START, SESSIONSTART_BLOCK_END)
         assert raw.strip(), "Generated SessionStart block must not be empty"
         lines = raw.splitlines()
-        assert lines and lines[0] == "cat << 'JSON_EOF'" and lines[-1] == "JSON_EOF", (
-            "Generated block must be `cat << 'JSON_EOF' ... JSON_EOF`. "
+        assert lines and lines[-1] == "JSON_EOF", (
+            "Generated block must end with JSON_EOF heredoc terminator. "
             "Run: sh scripts/sync_orchestrator_inject.sh"
+        )
+        assert lines[0].startswith("cat << 'JSON_EOF'") and "format_session_start.py" in lines[0], (
+            "Generated block must pipe heredoc through hooks/lib/format_session_start.py "
+            "(Cursor sessionStart mapping). Run: sh scripts/sync_orchestrator_inject.sh"
         )
         envelope = json.loads("\n".join(lines[1:-1]))
         assert envelope["hookSpecificOutput"]["hookEventName"] == "SessionStart"

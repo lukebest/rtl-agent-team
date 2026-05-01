@@ -11,14 +11,18 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 . "$SCRIPT_DIR/lib/audit-util.sh"
 jsonu_detect_parser
 
-CWD=$(jsonu_get_input_string "$INPUT" "cwd")
+CWD=$(jsonu_resolve_cwd_from_hook_input "$INPUT")
 [ -z "$CWD" ] && CWD="$(pwd)"
 
 # Only initialize audit when RAT marker exists (.rat/ or legacy .rtl-agent-team/).
 # Generic directories like rtl/ or docs/ are not RAT markers — they only become
 # meaningful once a rtl-agent-team skill has been invoked at least once.
 if ! rat_is_project "$CWD"; then
-  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart"}}'
+  if [ "${RTL_HOOK_OUTPUT_FORMAT:-claude}" = "cursor" ]; then
+    printf '{}'
+  else
+    printf '{"hookSpecificOutput":{"hookEventName":"SessionStart"}}'
+  fi
   exit 0
 fi
 
@@ -35,4 +39,8 @@ fi
 
 # Minimal valid SessionStart JSON to satisfy hook output schema
 # (hookEventName is required by Claude Code's hook output validator).
-printf '{"hookSpecificOutput":{"hookEventName":"SessionStart"}}'
+if [ "${RTL_HOOK_OUTPUT_FORMAT:-claude}" = "cursor" ]; then
+  printf '{}'
+else
+  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart"}}'
+fi

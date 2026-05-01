@@ -10,7 +10,7 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 . "$SCRIPT_DIR/lib/hook-output-util.sh"
 jsonu_detect_parser
 
-CWD=$(jsonu_get_input_string "$INPUT" "cwd")
+CWD=$(jsonu_resolve_cwd_from_hook_input "$INPUT")
 [ -z "$CWD" ] && CWD="$(pwd)"
 
 # Load flock utility for concurrent access protection
@@ -237,7 +237,7 @@ if [ -z "$FILE_PATH" ]; then
     fi
   done
   if [ "$_PPA_SKIP" = "true" ]; then
-    emit_continue "ppa-loop scope edit — skipping rtl-edit staleness"
+    emit_post_additional_context "ppa-loop scope edit — skipping rtl-edit staleness"
     exit 0
   fi
   _track_and_invalidate "$BASH_RTL_FILES"
@@ -251,7 +251,7 @@ case "$FILE_PATH" in
   *.sv|*.svh|*.v|*.vh)
     _setup_tracking
     if _rat_in_ppa_scope "$FILE_PATH"; then
-      emit_continue "ppa-loop scope edit — skipping rtl-edit staleness"
+      emit_post_additional_context "ppa-loop scope edit — skipping rtl-edit staleness"
       exit 0
     fi
     _track_and_invalidate "$FILE_PATH"

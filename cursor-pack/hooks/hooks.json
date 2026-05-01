@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-orchestrator-inject.sh\"",
+        "timeout": 30
+      },
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-audit-init.sh\"",
+        "timeout": 30
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-edit-tracker.sh\"",
+        "timeout": 60,
+        "matcher": "Write|Shell"
+      },
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-team-progress.sh\"",
+        "timeout": 30,
+        "matcher": "TaskUpdate"
+      },
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-audit-spawn-complete.sh\"",
+        "timeout": 30,
+        "matcher": "TaskCreate"
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-phase-state-bootstrap.sh\"",
+        "timeout": 60,
+        "matcher": "Skill"
+      },
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-skill-activation.sh\"",
+        "timeout": 60,
+        "matcher": "Skill"
+      },
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-spawn-context.sh\"",
+        "timeout": 30,
+        "matcher": "TaskCreate"
+      }
+    ],
+    "subagentStart": [
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-audit-subagent.sh\"",
+        "timeout": 30
+      }
+    ],
+    "subagentStop": [
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-audit-subagent.sh\"",
+        "timeout": 30
+      }
+    ],
+    "stop": [
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-verify-stop-gate.sh\"",
+        "timeout": 60
+      },
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-p6-cascade-gate.sh\"",
+        "timeout": 60
+      },
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-skill-completion-gate.sh\"",
+        "timeout": 120
+      },
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/rtl-coverage-exclusion-gate.sh\"",
+        "timeout": 60
+      },
+      {
+        "type": "command",
+        "command": "env RTL_HOOK_OUTPUT_FORMAT=cursor sh \"runtime/hooks/stop-gate.sh\"",
+        "timeout": 120
+      }
+    ]
+  }
+}

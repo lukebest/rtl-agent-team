@@ -85,9 +85,10 @@ fi
 printf '%s' "$JSON_LINE" | python3 -c 'import json,sys; json.loads(sys.stdin.read())' \
   || { echo "error: encoded JSON failed self-validation" >&2; exit 1; }
 
-# 3) Build the new hook block: pre-encoded JSON inside a single-quoted heredoc.
+# 3) Build the new hook block: pre-encoded JSON piped through format_session_start.py
+#    so RTL_HOOK_OUTPUT_FORMAT=cursor can emit Cursor sessionStart additional_context.
 {
-  printf "cat << 'JSON_EOF'\n"
+  printf 'cat << '\''JSON_EOF'\'' | python3 "$SCRIPT_DIR/lib/format_session_start.py"\n'
   printf '%s\n' "$JSON_LINE"
   printf 'JSON_EOF\n'
 } > "$NEW_BLOCK"

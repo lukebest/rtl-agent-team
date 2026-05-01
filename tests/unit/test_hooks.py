@@ -451,7 +451,7 @@ class TestRtlVerifyStopGate:
         content = (HOOKS_DIR / "rtl-verify-stop-gate.sh").read_text()
         assert "lib/json-util.sh" in content
         assert "lib/team-gate-util.sh" in content
-        assert "jsonu_get_input_string" in content
+        assert "jsonu_resolve_cwd_from_hook_input" in content
         assert "teamu_should_skip_gate" in content
 
 
@@ -1027,7 +1027,7 @@ class TestP6CascadeGate:
         content = (HOOKS_DIR / "rtl-p6-cascade-gate.sh").read_text()
         assert "lib/json-util.sh" in content
         assert "lib/team-gate-util.sh" in content
-        assert "jsonu_get_input_string" in content
+        assert "jsonu_resolve_cwd_from_hook_input" in content
         assert "teamu_should_skip_gate" in content
 
     def test_cascade_done_blocks_when_docs_older_than_stale(self, tmp_project):
@@ -1260,7 +1260,7 @@ class TestSkillCompletionGate:
     def test_skill_completion_gate_uses_shared_json_util(self):
         content = (HOOKS_DIR / "rtl-skill-completion-gate.sh").read_text()
         assert "lib/json-util.sh" in content
-        assert "jsonu_get_input_string" in content
+        assert "jsonu_resolve_cwd_from_hook_input" in content
         assert "jsonu_get_file_path_string" in content
         assert "jsonu_get_file_path_bool" in content
         assert "jsonu_get_file_path_num" in content

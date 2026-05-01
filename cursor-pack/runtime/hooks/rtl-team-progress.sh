@@ -14,7 +14,7 @@ jsonu_detect_parser
 
 # Extract CWD from hook input (consistent with peer hooks)
 INPUT=$(cat)
-CWD=$(jsonu_get_input_string "$INPUT" "cwd")
+CWD=$(jsonu_resolve_cwd_from_hook_input "$INPUT")
 [ -z "$CWD" ] && CWD="$(pwd)"
 RAT_DIR=$(rat_project_dir "$CWD")
 [ -z "$RAT_DIR" ] && { emit_post_continue; }

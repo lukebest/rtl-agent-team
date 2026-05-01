@@ -1,0 +1,64 @@
+{
+  "name": "rtl-agent-marketplace",
+  "owner": {
+    "name": "babyworm",
+    "email": "babyworm@users.noreply.github.com"
+  },
+  "metadata": {
+    "description": "RTL design and verification automation for Cursor",
+    "version": "0.10.6"
+  },
+  "plugins": [
+    {
+      "name": "rtl-agent-team",
+      "source": "cursor-pack",
+      "description": "97-agent RTL design pipeline with 97 skills for 6-Phase hardware design automation (Research \u2192 Architecture \u2192 \u03bcArch \u2192 RTL \u2192 Verify \u2192 Design Note)",
+      "version": "0.10.6",
+      "author": {
+        "name": "babyworm"
+      },
+      "homepage": "https://github.com/babyworm/rtl-agent-team",
+      "repository": "https://github.com/babyworm/rtl-agent-team",
+      "license": "MIT",
+      "category": "development",
+      "tags": [
+        "rtl",
+        "hdl",
+        "verilog",
+        "systemverilog",
+        "fpga",
+        "asic",
+        "eda",
+        "verification",
+        "formal",
+        "uvm",
+        "cocotb"
+      ]
+    },
+    {
+      "name": "systemverilog-lsp",
+      "source": {
+        "source": "github",
+        "repo": "babyworm/systemverilog-lsp",
+        "ref": "v1.1.4",
+        "sha": "a874d3248d08606b50b71376c64ed8af99396c97"
+      },
+      "description": "SystemVerilog/Verilog language server powered by slang-server",
+      "author": {
+        "name": "RTL Agent Team contributors"
+      },
+      "homepage": "https://github.com/hudson-trading/slang-server",
+      "repository": "https://github.com/babyworm/systemverilog-lsp",
+      "license": "MIT",
+      "category": "development",
+      "tags": [
+        "systemverilog",
+        "verilog",
+        "lsp",
+        "hdl",
+        "rtl",
+        "slang"
+      ]
+    }
+  ]
+}

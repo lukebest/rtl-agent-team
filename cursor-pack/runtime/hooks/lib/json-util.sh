@@ -264,3 +264,45 @@ PY
       ;;
   esac
 }
+
+# Resolve project/workspace directory from hook stdin (Claude Code or Cursor).
+# Prefers "cwd", then first entry of "workspace_roots", else empty string.
+# Call after jsonu_detect_parser.
+jsonu_resolve_cwd_from_hook_input() {
+  JSONU_INPUT="$1"
+
+  case "$JSONU_PARSER_MODE" in
+    jq)
+      printf '%s' "$JSONU_INPUT" | jq -r '
+        ((.cwd // "") | if type == "string" and length > 0 then . else empty end)
+        // (if (.workspace_roots | type) == "array" and (.workspace_roots | length) > 0 then .workspace_roots[0] else empty end)
+        // empty
+      ' 2>/dev/null | head -n 1
+      ;;
+    python)
+      printf '%s' "$JSONU_INPUT" | "$JSONU_PY_BIN" -c '
+import json
+import sys
+try:
+    j = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+w = j.get("cwd")
+if isinstance(w, str) and w.strip():
+    print(w, end="")
+    sys.exit(0)
+wr = j.get("workspace_roots")
+if isinstance(wr, list) and wr and isinstance(wr[0], str):
+    print(wr[0], end="")
+' 2>/dev/null
+      ;;
+    *)
+      JSONU_CWD=$(printf '%s' "$JSONU_INPUT" | sed -n 's/.*"cwd"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+      if [ -n "$JSONU_CWD" ]; then
+        printf '%s' "$JSONU_CWD"
+        return 0
+      fi
+      printf ''
+      ;;
+  esac
+}
